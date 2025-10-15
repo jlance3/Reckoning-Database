@@ -49,3 +49,5 @@ def query_collections(db_name, collection1, collection2):
     print(f"\nRecords from {collection2}:")
     for record in results2:
         print(record)
+
+#addding methods fo different conditions to check through both databases for relevant information
