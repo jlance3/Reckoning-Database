@@ -1,0 +1,158 @@
+import argparse
+import pymongo
+import pandas as pd
+
+#Take two xlsx files and inserts data into two different collections in MongoDB
+def insert_data_to_mongodb(file1, file2, db_name, collection1, collection2):
+    # Connect to MongoDB
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+
+    # Read the first Excel file and insert into the first collection
+    df1 = pd.read_excel(file1)
+    records1 = df1.to_dict(orient='records')
+    db[collection1].insert_many(records1)
+    print(f"Inserted {len(records1)} records into {collection1}")
+
+    # Read the second Excel file and insert into the second collection
+    df2 = pd.read_excel(file2)
+    records2 = df2.to_dict(orient='records')
+    db[collection2].insert_many(records2)
+    print(f"Inserted {len(records2)} records into {collection2}")
+
+#method to check collections
+def query_collections(db_name, collection1, collection2):
+    # Connect to MongoDB
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    # Query the first collection
+    results1 = list(col1.find())
+    print(f"Records from {collection1}:")
+    for record in results1:
+        print(record)
+    # Query the second collection
+    results2 = list(col2.find())
+    print(f"\nRecords from {collection2}:")
+    for record in results2:
+        print(record)
+
+#making a method that looks through both databases and searches for work done by user chaja and a verbose for it
+
+def query_name(db_name, collection1, collection2):
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    query1 = {
+        "$and": [ #checking for keywords in proper columns
+            {"Test Owner": {"$regex": "kevin chaja", "$options": "i"}}, #made sure to account for capitalization, all good :)
+            {"Test Owner": {"$not": {"$regex": "ex:", "$options": "i"}}}, #but...
+        ]
+    }
+    query2 = {"Blocker?" : {"$regex": "kevin chaja", "$options": "i"}} 
+
+    results1 = list(col1.find(query1))
+    results3 = list(col1.find(query2))      #putting it all in a list
+    results2 = list(col2.find(query1))
+    results4 = list(col2.find(query2))
+    df1 = pd.DataFrame(results1)
+    df3 = pd.DataFrame(results3)        #convert to dataframes
+    df2 = pd.DataFrame(results2)
+    df4 = pd.DataFrame(results4)
+    dfProcessing = pd.concat([df1, df3, df2, df4], ignore_index=True, sort=False) #combine
+    dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"]) #drop the dupes based on test case (very unlikely that the same user will be doing the same test case)
+    dfFinal.to_csv("UserKevinChaja.csv", index = False, header = True) #converts to a csv file for analysis
+
+        
+#making a method that looks through both databases and searches for "all repeatable bugs" and a verbose for it
+
+def query_repeatable (db_name, collection1, collection2):
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    query1 = {
+        "$and": [
+            {"Repeatable?": {"$regex": "yes", "$options": "i"}},
+            {"Repeatable?": {"$not": {"$regex": "no", "$options": "i"}}}, #remove all no's (thats not yes)
+        ]
+    }
+    query2 = {
+        "$or": [
+            {"Repeatable?": {"$regex": "^Y$", "$options": "i"}}, #account for Hernandez 
+            {"Repeatable?": {"$regex": "^maybe$", "$options": "i"}}, #account for Stockdale
+        ]
+    }
+    results1 = list(col1.find(query1))
+    results2 = list(col2.find(query1))
+    results3 = list(col1.find(query2))
+    results4 = list(col2.find(query2))
+    df1 = pd.DataFrame(results1)
+    df2 = pd.DataFrame(results2)
+    df3 = pd.DataFrame(results3)
+    df4 = pd.DataFrame(results4)
+    dfProcessing = pd.concat([df1, df2, df3, df4], ignore_index=True, sort=False)
+    dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"])
+    dfFinal.to_csv("RepeatableBugs.csv", index = False, header = True) 
+
+#making a method that looks through both databases and searches for "blocker bugs" and a verbose for it
+
+def query_blockers (db_name, collection1, collection2): #copy pasted from previous method, should be the same
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    query1 = {
+        "$and": [
+            {"Blocker?": {"$regex": "yes", "$options": "i"}},
+            {"Blocker?": {"$not": {"$regex": "no", "$options": "i"}}}, #remove all no's (thats not yes)
+        ]
+    }
+    query2 = {
+        "$or": [
+            {"Blocker?": {"$regex": "^Y$", "$options": "i"}}, #account for Hernandez 
+            {"Blocker?": {"$regex": "^maybe$", "$options": "i"}}, #account for Stockdale
+        ]
+    }
+    results1 = list(col1.find(query1))
+    results2 = list(col2.find(query1))
+    results3 = list(col1.find(query2))
+    results4 = list(col2.find(query2))
+    df1 = pd.DataFrame(results1)
+    df2 = pd.DataFrame(results2)
+    df3 = pd.DataFrame(results3)
+    df4 = pd.DataFrame(results4)
+    dfProcessing = pd.concat([df1, df2, df3, df4], ignore_index=True, sort=False)
+    dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"])
+    dfFinal.to_csv("BlockerBugs.csv", index = False, header = True) 
+
+#making a method that looks through both databases and searches for "repeatable AND blocker bugs" and a verbose for it
+
+def query_repeatplusblocker (db_name, collection1, collection2):
+    asd
+
+#making a method that looks through both databases and searches for "on build 2/24/2024" and a verbose for it
+
+def query_date (db_name, collection1, collection2):
+    asd
+
+#parse and final arguments
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Insert data from two Excel files into MongoDB collections.")
+    parser.add_argument("db_name", help="Name of the MongoDB database")
+    parser.add_argument("collection1", help="Name of the first MongoDB collection")
+    parser.add_argument("collection2", help="Name of the second MongoDB collection")
+    parser.add_argument("--v", action="store_true", dest="verbose", help="Print records with name Kevin Chaja")
+    parser.add_argument("--verb", action="store_true", dest="verb", help="Search for all repeatable bugs")
+    parser.add_argument("-ver", action="store_true", dest="ver", help = "Search for all blocker bugs")
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        query_name(args.db_name, args.collection1, args.collection2)
+    elif args.verb:
+        query_repeatable(args.db_name, args.collection1, args.collection2)
+    elif args.ver:
+        query_blockers(args.db_name, args.collection1, args.collection2)
