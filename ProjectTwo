@@ -51,7 +51,7 @@ def query_name(db_name, collection1, collection2):
             {"Test Owner": {"$not": {"$regex": "ex:", "$options": "i"}}}, #but...
         ]
     }
-    query2 = {"Blocker?" : {"$regex": "kevin chaja", "$options": "i"}} 
+    query2 = {"Blocker?" : {"$regex": "kevin chaja", "$options": "i"}} #account for the fool. (please don't dock points sir)
 
     results1 = list(col1.find(query1))
     results3 = list(col1.find(query2))      #putting it all in a list
@@ -131,12 +131,65 @@ def query_blockers (db_name, collection1, collection2): #copy pasted from previo
 #making a method that looks through both databases and searches for "repeatable AND blocker bugs" and a verbose for it
 
 def query_repeatplusblocker (db_name, collection1, collection2):
-    asd
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    query1 = {
+        "$or": [
+            {"$and": [ #accounts for yes, yes
+                {"Repeatable?": {"$regex": "yes", "$options": "i"}},
+                {"Repeatable?": {"$not": {"$regex": "no", "$options": "i"}}},
+                {"Blocker?": {"$regex": "yes", "$options": "i"}},
+                {"Blocker?": {"$not": {"$regex": "no", "$options": "i"}}}, #remove all no's (thats not yes)
+            ]},
+            {"$and": [ #accounts for Y, Y
+                {"Repeatable?": {"$regex": "^Y$", "$options": "i"}},
+                {"Blocker?": {"$regex": "^Y$", "$options": "i"}}
+            ]},
+            {"$and": [ #accounts for maybe, maybe
+                {"Repeatable?": {"$regex": "^maybe$", "$options": "i"}},
+                {"Blocker?": {"$regex": "^maybe$", "$options": "i"}},
+            ]},
+            {"$and": [ #accounts for maybe, y
+                {"Repeatable?": {"$regex": "^maybe$", "$options": "i"}},
+                {"Blocker?": {"$regex": "^Y$", "$options": "i"}},
+            ]},
+            {"$and": [ #accounts for y, maybe
+                {"Repeatable?": {"$regex": "^Y$", "$options": "i"}},
+                {"Blocker?": {"$regex": "^maybe$", "$options": "i"}},
+            ]},
+            {"$and": [ #accounts for yes, maybe
+                {"Repeatable?": {"$regex": "yes", "$options": "i"}},
+                {"Repeatable?": {"$not": {"$regex": "no", "$options": "i"}}},
+                {"Blocker?": {"$regex": "^maybe$", "$options": "i"}},
+            ]},
+            {"$and": [ #accounts for maybe, yes
+                {"Repeatable?": {"$regex": "^Y$", "$options": "i"}},
+                {"Blocker?": {"$regex": "yes", "$options": "i"}},
+                {"Blocker?": {"$not": {"$regex": "no", "$options": "i"}}},
+            ]},
+        ]
+    }
+
+    results1 = list(col1.find(query1))
+    results2 = list(col2.find(query1))
+    df1 = pd.DataFrame(results1)
+    df2 = pd.DataFrame(results2)
+    dfProcessing = pd.concat([df1, df2], ignore_index=True, sort=False)
+    dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"])
+    dfFinal.to_csv("RepeatableAndBlockerBugs.csv", index = False, header = True)
 
 #making a method that looks through both databases and searches for "on build 2/24/2024" and a verbose for it
 
 def query_date (db_name, collection1, collection2):
-    asd
+    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
+    db = client[db_name]
+    col1 = db[collection1]
+    col2 = db[collection2]
+    query1 = {
+        #query for 2/24/2024 OR 2/24/24 (recall when searching for yes/no regex [yes\/no])
+    }
 
 #parse and final arguments
 if __name__ == "__main__":
@@ -147,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--v", action="store_true", dest="verbose", help="Print records with name Kevin Chaja")
     parser.add_argument("--verb", action="store_true", dest="verb", help="Search for all repeatable bugs")
     parser.add_argument("-ver", action="store_true", dest="ver", help = "Search for all blocker bugs")
+    parser.add_argument("-verbo:", action="store_true", dest="verbo", help = "Search fir both repeatable and blocker bugs as yes")
 
     args = parser.parse_args()
 
@@ -156,3 +210,5 @@ if __name__ == "__main__":
         query_repeatable(args.db_name, args.collection1, args.collection2)
     elif args.ver:
         query_blockers(args.db_name, args.collection1, args.collection2)
+    elif args.verbo:
+        query_repeatplusblocker(args.db_name, args.collection1, args.collection2)
