@@ -46,6 +46,7 @@ def query_name(db_name, collection1, collection2):
     df4 = pd.DataFrame(results4)
     dfProcessing = pd.concat([df1, df3, df2, df4], ignore_index=True, sort=False) #combine
     dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"]) #drop the dupes based on test case (very unlikely that the same user will be doing the same test case)
+    #NOTE: some test cases are the same, but have different results. First check if test cases are the same. If they are, then check test #. If different, ignore duplicate. If the same, drop duplicate.
     dfFinal.to_csv("UserKevinChaja.csv", index = False, header = True) #converts to a csv file for analysis
 
         
