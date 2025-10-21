@@ -189,8 +189,19 @@ def query_date (db_name, collection1, collection2):
     col2 = db[collection2]
     query1 = {
         #query for 2/24/2024 OR 2/24/24 (recall when searching for yes/no regex [yes\/no])
+        "$or" : [
+            {"Build #": {"$eq": "2024-02-24T00:00:00Z"}},
+            {"Build #": {"$eq": "2024-02-24T00:00:00Z"}}
+        ]
     }
 
+    results1 = list(col1.find(query1))
+    results2 = list(col2.find(query1))
+    df1 = pd.DataFrame(results1)
+    df2 = pd.DataFrame(results2)
+    dfProcessing = pd.concat([df1, df2], ignore_index = True, sort = False)
+    dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"])
+    dfFinal.to_csv("DateDataframeTest.csv", index = False, header = True)
 #parse and final arguments
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Insert data from two Excel files into MongoDB collections.")
@@ -201,6 +212,7 @@ if __name__ == "__main__":
     parser.add_argument("--verb", action="store_true", dest="verb", help="Search for all repeatable bugs")
     parser.add_argument("-ver", action="store_true", dest="ver", help = "Search for all blocker bugs")
     parser.add_argument("-verbo:", action="store_true", dest="verbo", help = "Search fir both repeatable and blocker bugs as yes")
+    parser.add_argument("-ve", action="store_true", dest="ve", help = "Search for specific date.")
 
     args = parser.parse_args()
 
@@ -212,3 +224,6 @@ if __name__ == "__main__":
         query_blockers(args.db_name, args.collection1, args.collection2)
     elif args.verbo:
         query_repeatplusblocker(args.db_name, args.collection1, args.collection2)
+    elif args.ve:
+        query_date(args.db_name, args.collection1, args.collection2)
+        
