@@ -1,6 +1,7 @@
 import argparse
 import pymongo
 import pandas as pd
+import datetime
 
 #Take two xlsx files and inserts data into two different collections in MongoDB
 def insert_data_to_mongodb(file1, file2, db_name, collection1, collection2):
@@ -19,24 +20,6 @@ def insert_data_to_mongodb(file1, file2, db_name, collection1, collection2):
     records2 = df2.to_dict(orient='records')
     db[collection2].insert_many(records2)
     print(f"Inserted {len(records2)} records into {collection2}")
-
-#method to check collections
-def query_collections(db_name, collection1, collection2):
-    # Connect to MongoDB
-    client = pymongo.MongoClient("mongodb+srv://lancestajimenez_db_user:wcHp8TWnJvdYi74Y@testcluster.vb9fgy4.mongodb.net/")
-    db = client[db_name]
-    col1 = db[collection1]
-    col2 = db[collection2]
-    # Query the first collection
-    results1 = list(col1.find())
-    print(f"Records from {collection1}:")
-    for record in results1:
-        print(record)
-    # Query the second collection
-    results2 = list(col2.find())
-    print(f"\nRecords from {collection2}:")
-    for record in results2:
-        print(record)
 
 #making a method that looks through both databases and searches for work done by user chaja and a verbose for it
 
@@ -187,12 +170,14 @@ def query_date (db_name, collection1, collection2):
     db = client[db_name]
     col1 = db[collection1]
     col2 = db[collection2]
+    # query for 2/24/2024 (match records for that calendar date)
+    start_date = datetime.datetime(2024, 2, 24)
+    end_date = start_date + datetime.timedelta(days=1)
     query1 = {
-        #query for 2/24/2024 OR 2/24/24 (recall when searching for yes/no regex [yes\/no])
-        "$or" : [
-            {"Build #": {"$eq": "2024-02-24T00:00:00Z"}},
-            {"Build #": {"$eq": "2024-02-24T00:00:00Z"}}
-        ]
+        'Build #': {
+            '$gte': start_date,
+            '$lt': end_date
+        }
     }
 
     results1 = list(col1.find(query1))
@@ -202,6 +187,8 @@ def query_date (db_name, collection1, collection2):
     dfProcessing = pd.concat([df1, df2], ignore_index = True, sort = False)
     dfFinal = dfProcessing.drop_duplicates(subset = ["Test Case"])
     dfFinal.to_csv("DateDataframeTest.csv", index = False, header = True)
+
+
 #parse and final arguments
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Insert data from two Excel files into MongoDB collections.")
@@ -226,4 +213,5 @@ if __name__ == "__main__":
         query_repeatplusblocker(args.db_name, args.collection1, args.collection2)
     elif args.ve:
         query_date(args.db_name, args.collection1, args.collection2)
-        
+    else:
+        asasd #add arguments for file1 and file2, THEN call insert_data_to_mongodb method
