@@ -48,6 +48,7 @@ def query_name(db_name, collection1, collection2):
     #drop duplicates 
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("UserKevinChaja.csv", index = False, header = True) #converts to a csv file for analysis
+    print(f"'Kevin Chaja' database query file generated!")
 
         
 #making a method that looks through both databases and searches for "all repeatable bugs" and a verbose for it
@@ -81,6 +82,8 @@ def query_repeatable (db_name, collection1, collection2):
     #drop duplicates 
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("RepeatableBugs.csv", index = False, header = True) 
+    print(f"'Repeatable Bugs' database query file generated!")
+
 
 #making a method that looks through both databases and searches for "blocker bugs" and a verbose for it
 
@@ -113,6 +116,8 @@ def query_blockers (db_name, collection1, collection2): #copy pasted from previo
     #drop duplicates 
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("BlockerBugs.csv", index = False, header = True) 
+    print(f"'Blocker Bugs' database query file generated!")
+
 
 #making a method that looks through both databases and searches for "repeatable AND blocker bugs" and a verbose for it
 
@@ -166,6 +171,7 @@ def query_repeatplusblocker (db_name, collection1, collection2):
     #drop duplicates 
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("RepeatableAndBlockerBugs.csv", index = False, header = True)
+    print(f"'Repeatable + Blocker Bugs' database query file generated!")
 
 #making a method that looks through both databases and searches for "on build 2/24/2024" and a verbose for it
 
@@ -192,11 +198,14 @@ def query_date (db_name, collection1, collection2):
     #drop duplicates 
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("SpecifiedDate.csv", index = False, header = True)
+    print(f"'Specfic Date' database query file generated!")
 
 
 #parse and final arguments
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Insert data from two Excel files into MongoDB collections.")
+    parser.add_argument("file1", metavar="FILE", type=str, help="Path to the text file.")
+    parser.add_argument("file2", metavar="FILE", type=str, help="Path to the text file.")
     parser.add_argument("db_name", help="Name of the MongoDB database")
     parser.add_argument("collection1", help="Name of the first MongoDB collection")
     parser.add_argument("collection2", help="Name of the second MongoDB collection")
@@ -219,6 +228,4 @@ if __name__ == "__main__":
     elif args.ve:
         query_date(args.db_name, args.collection1, args.collection2)
     else:
-        parser.add_argument("file1", metavar="FILE", type=str, help="Path to the text file.")
-        parser.add_argument("file2", metavar="FILE", type=str, help="Path to the text file.")
         insert_data_to_mongodb(args.file1, args.file2, args.db_name, args.collection1, args.collection2)
