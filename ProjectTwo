@@ -49,6 +49,7 @@ def query_name(db_name, collection1, collection2):
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("UserKevinChaja.csv", index = False, header = True) #converts to a csv file for analysis
     print(f"'Kevin Chaja' database query file generated!")
+    return dfFinal
 
         
 #making a method that looks through both databases and searches for "all repeatable bugs" and a verbose for it
@@ -83,6 +84,7 @@ def query_repeatable (db_name, collection1, collection2):
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("RepeatableBugs.csv", index = False, header = True) 
     print(f"'Repeatable Bugs' database query file generated!")
+    return dfFinal
 
 
 #making a method that looks through both databases and searches for "blocker bugs" and a verbose for it
@@ -117,6 +119,7 @@ def query_blockers (db_name, collection1, collection2): #copy pasted from previo
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("BlockerBugs.csv", index = False, header = True) 
     print(f"'Blocker Bugs' database query file generated!")
+    return dfFinal
 
 
 #making a method that looks through both databases and searches for "repeatable AND blocker bugs" and a verbose for it
@@ -172,6 +175,7 @@ def query_repeatplusblocker (db_name, collection1, collection2):
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("RepeatableAndBlockerBugs.csv", index = False, header = True)
     print(f"'Repeatable + Blocker Bugs' database query file generated!")
+    return dfFinal
 
 #making a method that looks through both databases and searches for "on build 2/24/2024" and a verbose for it
 
@@ -180,14 +184,14 @@ def query_date (db_name, collection1, collection2):
     db = client[db_name]
     col1 = db[collection1]
     col2 = db[collection2]
-    # query for 2/24/2024 (match records for that calendar date)
+
     start_date = datetime.datetime(2024, 2, 24)
     end_date = start_date + datetime.timedelta(days=1)
     query1 = {
         'Build #': {
-            '$gte': start_date,
-            '$lt': end_date
-        }
+            '$gte': start_date, #greater than or equal to start date
+            '$lt': end_date #less than end date
+        }                   #matches that exact date
     }
 
     results1 = list(col1.find(query1))
@@ -199,6 +203,39 @@ def query_date (db_name, collection1, collection2):
     dfFinal = dfProcessing.drop_duplicates(subset=["Test Case", "Test #", "Expected Result", "Actual Result"]) 
     dfFinal.to_csv("SpecifiedDate.csv", index = False, header = True)
     print(f"'Specfic Date' database query file generated!")
+    return dfFinal
+
+def baking_the_cake (db_name, collection1, collection2):
+    name = query_name(db_name, collection1, collection2)
+    repeat = query_repeatable(db_name, collection1, collection2)
+    blocker = query_blockers(db_name, collection1, collection2)
+    repeatblock = query_repeatplusblocker(db_name, collection1, collection2)
+    date = query_date(db_name, collection1, collection2)
+
+    
+    #making new column to make reading easier
+    name = name.copy() #makes a copy so the originally generated df is not modified
+    name['OriginFile'] = 'UserKevinChaja.csv' #adds the new column
+
+    repeat = repeat.copy()
+    repeat['OriginFile'] = 'RepeatableBugs.csv'
+ 
+    blocker = blocker.copy()
+    blocker['OriginFile'] = 'BlockerBugs.csv'
+
+    repeatblock = repeatblock.copy()
+    repeatblock['OriginFile'] = 'RepeatableAndBlockerBugs.csv'
+    
+    date = date.copy()
+    date['OriginFile'] = 'SpecifiedDate.csv'
+
+    #putting everything together
+    dfCake = pd.concat([df for df in (name, repeat, blocker, repeatblock, date)], ignore_index=True, sort=False) 
+
+    #converts to csv
+    dfCake.to_csv("TheCake.csv", index = False, header = True)
+    print(f"Successfully baked the cake.")
+
 
 
 #parse and final arguments
@@ -214,6 +251,7 @@ if __name__ == "__main__":
     parser.add_argument("-ver", action="store_true", dest="ver", help = "Search for all blocker bugs")
     parser.add_argument("-verbo:", action="store_true", dest="verbo", help = "Search fir both repeatable and blocker bugs as yes")
     parser.add_argument("-ve", action="store_true", dest="ve", help = "Search for specific date.")
+    parser.add_argument("-btc", action="store_true", dest="btc", help = "Baking the cake, access all query methods.")
 
     args = parser.parse_args()
 
@@ -227,5 +265,7 @@ if __name__ == "__main__":
         query_repeatplusblocker(args.db_name, args.collection1, args.collection2)
     elif args.ve:
         query_date(args.db_name, args.collection1, args.collection2)
+    elif args.btc:
+        baking_the_cake(args.db_name, args.collection1, args.collection2)
     else:
         insert_data_to_mongodb(args.file1, args.file2, args.db_name, args.collection1, args.collection2)
